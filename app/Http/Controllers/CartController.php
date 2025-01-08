@@ -4,56 +4,59 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\SanPham;
+use Darryldecode\Cart\Facades\CartFacade as Cart; // Sửa lỗi import Cart
 
 class CartController extends Controller
 {
     // Hiển thị giỏ hàng
     public function index()
     {
-        $cart = session()->get('cart', []);
-        return view('pages.cart', compact('cart'));
+        $cartItems = Cart::getContent();
+        return view('cart.index', compact('cartItems'));
     }
 
     // Thêm sản phẩm vào giỏ hàng
-    public function add($id)
+    public function add(Request $request, $id)
     {
-        $sanPham = SanPham::findOrFail($id);
-        $cart = session()->get('cart', []);
+        $product = SanPham::findOrFail($id);
 
-        // Nếu sản phẩm đã có trong giỏ hàng thì tăng số lượng
-        if (isset($cart[$id])) {
-            $cart[$id]['so_luong']++;
-        } else {
-            // Nếu chưa có, thêm sản phẩm mới
-            $cart[$id] = [
-                'ten_sp' => $sanPham->ten_sp,
-                'gia_sp' => $sanPham->gia_sp,
-                'so_luong' => 1,
-                'hinh_anh_sp' => $sanPham->hinh_anh_sp
-            ];
-        }
+        Cart::add([
+            'id' => $product->id_sp,
+            'name' => $product->ten_sp,
+            'price' => $product->gia_sp,
+            'quantity' => $request->quantity ?? 1,
+            'attributes' => [
+                'hinh_anh_sp' => $product->hinh_anh_sp
+            ]
+        ]);
 
-        session()->put('cart', $cart);
-        return redirect('/gio-hang')->with('success', 'Sản phẩm đã được thêm vào giỏ hàng!');
+        return redirect()->route('cart.index')->with('success', 'Sản phẩm đã được thêm vào giỏ hàng!');
     }
 
-    // Xóa sản phẩm khỏi giỏ hàng
+    // Cập nhật số lượng sản phẩm trong giỏ hàng
+    public function update(Request $request, $id)
+    {
+        Cart::update($id, [
+            'quantity' => [
+                'relative' => false,
+                'value' => $request->quantity
+            ]
+        ]);
+
+        return redirect()->route('cart.index')->with('success', 'Số lượng sản phẩm đã được cập nhật!');
+    }
+
+    // Xóa một sản phẩm khỏi giỏ hàng
     public function remove($id)
     {
-        $cart = session()->get('cart', []);
-
-        if (isset($cart[$id])) {
-            unset($cart[$id]);
-            session()->put('cart', $cart);
-        }
-
-        return redirect('/gio-hang')->with('success', 'Sản phẩm đã được xóa khỏi giỏ hàng!');
+        Cart::remove($id);
+        return redirect()->route('cart.index')->with('success', 'Sản phẩm đã được xóa khỏi giỏ hàng!');
     }
 
-    // Thanh toán đơn giản (xóa giỏ hàng)
-    public function checkout()
+    // Xóa toàn bộ giỏ hàng
+    public function clear()
     {
-        session()->forget('cart');
-        return redirect('/san-pham')->with('success', 'Thanh toán thành công!');
+        Cart::clear();
+        return redirect()->route('cart.index')->with('success', 'Giỏ hàng đã được làm trống!');
     }
 }
