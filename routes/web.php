@@ -1,29 +1,29 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CartController; // ✅ THÊM DÒNG NÀY ĐỂ IMPORT CONTROLLER
-
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 // Trang chủ
-Route::get('/', function () {
-    return view('pages.home');
-});
+Route::get('/', [HomeController::class, 'index']);
 
 // Quản lý sản phẩm
-Route::get('/san-pham', [ProductController::class, 'index']);
-Route::get('/san-pham/them', [ProductController::class, 'create']);
-Route::post('/san-pham/them', [ProductController::class, 'store']);
-Route::get('/san-pham/sua/{id}', [ProductController::class, 'edit']);
-Route::post('/san-pham/sua/{id}', [ProductController::class, 'update']);
-Route::delete('/san-pham/xoa/{id}', [ProductController::class, 'destroy']);
+Route::get('/san-pham', [ProductController::class, 'index']); // Hiển thị danh sách sản phẩm + tìm kiếm + phân trang
+Route::get('/san-pham/create', [ProductController::class, 'create']); // Form thêm sản phẩm
+Route::post('/san-pham', [ProductController::class, 'store']); // Xử lý lưu sản phẩm
+Route::get('/san-pham/{id}/edit', [ProductController::class, 'edit']); // Form chỉnh sửa sản phẩm
+Route::put('/san-pham/{id}', [ProductController::class, 'update']); // Xử lý cập nhật sản phẩm
+Route::delete('/san-pham/{id}', [ProductController::class, 'destroy']); // Xóa sản phẩm
 
-// ✅ Giỏ hàng (Cart)
-Route::get('/gio-hang', [CartController::class, 'index']);
-Route::post('/gio-hang/them/{id}', [CartController::class, 'add']);
-Route::delete('/gio-hang/xoa/{id}', [CartController::class, 'remove']);
-Route::post('/gio-hang/thanh-toan', [CartController::class, 'checkout']);
 
-// Trang liên hệ
-Route::get('/lien-he', function () {
-    return view('pages.contact');
-});
+// Giỏ hàng
+Route::get('/gio-hang', [CartController::class, 'index'])->name('cart.index');
+Route::post('/gio-hang/add/{id}', [CartController::class, 'add'])->name('cart.add');
+Route::post('/gio-hang/update/{id}', [CartController::class, 'update'])->name('cart.update');
+Route::post('/gio-hang/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/gio-hang/clear', [CartController::class, 'clear'])->name('cart.clear');
+
+
+Route::get('/checkout', [CheckoutController::class, 'showCheckoutForm'])->name('checkout.form');
+Route::post('/checkout', [CheckoutController::class, 'processCheckout'])->name('checkout.process');
